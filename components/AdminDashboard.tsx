@@ -50,18 +50,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const formatDate = (dateStr: Date | string | null | undefined) => {
-    console.log("🕓 Formatting date:", dateStr);
-    if (!dateStr) return '—';
+  try {
+    console.log("🕒 Formatting date:", dateStr);
+
+    // si la valeur est nulle, vide ou non définie
+    if (!dateStr || dateStr === "Invalid Date") return "—";
+
     const date = new Date(dateStr);
+
+    // si la date est invalide (ex: NaN, string vide, etc)
     if (isNaN(date.getTime())) {
-      console.warn("⛔ Invalid date:", dateStr);
-      return '—';
+      console.warn("⛔ Invalid date detected:", dateStr);
+      return "—";
     }
+
     return new Intl.DateTimeFormat(language, {
-      dateStyle: 'medium',
-      timeStyle: 'short'
+      dateStyle: "medium",
+      timeStyle: "short",
     }).format(date);
-  };
+  } catch (error) {
+    console.error("💥 Error while formatting date:", dateStr, error);
+    return "—";
+  }
+};
+
 
   const getUserName = (userId: number) => users.find(u => u.id === userId)?.name || 'Unknown User';
   
