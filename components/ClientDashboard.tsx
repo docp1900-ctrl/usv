@@ -53,11 +53,11 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
     new Intl.NumberFormat(language, { style: 'currency', currency: 'USD' }).format(amount);
 
   const formatDate = (dateStr: Date | string | null | undefined) => {
-  console.log("🕓 [ClientDashboard] Formatting date:", dateStr);
+  console.log("🕓 [AdminDashboard] Formatting date:", dateStr);
 
   // 1️⃣ Si la valeur est totalement absente
   if (!dateStr) {
-    console.warn("⚠️ Missing date value");
+    console.warn("⚠️ Missing date value (AdminDashboard)");
     return "—";
   }
 
@@ -66,14 +66,14 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
     typeof dateStr === "string" &&
     (dateStr.trim() === "" || dateStr === "undefined" || dateStr === "Invalid Date")
   ) {
-    console.warn("⛔ Invalid date string:", dateStr);
+    console.warn("⛔ Invalid date string (AdminDashboard):", dateStr);
     return "—";
   }
 
   // 3️⃣ Si c’est déjà un objet Date
   if (dateStr instanceof Date) {
     if (isNaN(dateStr.getTime())) {
-      console.warn("⛔ Invalid Date object:", dateStr);
+      console.warn("⛔ Invalid Date object (AdminDashboard):", dateStr);
       return "—";
     }
     return new Intl.DateTimeFormat(language, {
@@ -85,7 +85,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
   // 4️⃣ Tentative de conversion
   const date = new Date(dateStr);
   if (isNaN(date.getTime())) {
-    console.warn("⛔ Conversion failed for date:", dateStr);
+    console.warn("⛔ Conversion failed for date (AdminDashboard):", dateStr);
     return "—";
   }
 
