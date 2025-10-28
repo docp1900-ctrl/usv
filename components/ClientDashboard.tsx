@@ -41,7 +41,16 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
   const [activeTab, setActiveTab] = useState('transfers');
 
   const formatCurrency = (amount: number) => new Intl.NumberFormat(language, { style: 'currency', currency: 'USD' }).format(amount);
-  const formatDate = (dateStr: Date | string) => new Intl.DateTimeFormat(language, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(dateStr));
+ const formatDate = (dateStr: Date | string) => {
+  if (!dateStr) return '—';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat(language, {
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  }).format(date);
+};
+
   
   const handleHelpNeeded = (initialMessage: string) => {
     setChatOpen(true);
