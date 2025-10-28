@@ -1,0 +1,5 @@
+{
+  "name": "USALLI Bank",
+  "description": "A modern online banking platform offering credit services, secure transfers, and integrated support chat. The application is multilingual (FR/EN/ES) and provides distinct dashboards for clients and administrators.",
+  "requestFramePermissions": []
+}

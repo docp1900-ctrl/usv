@@ -1,0 +1,236 @@
+// This file simulates a database by storing data in memory.
+// In a real application, this would be replaced with a connection to a database like PostgreSQL.
+
+const UserRole = {
+  CLIENT: 'client',
+  ADMIN: 'admin',
+};
+
+// --- IN-MEMORY DATA STORE ---
+let users = [
+  { id: 1, name: 'Jean Dupont', email: 'client@usalli.com', role: UserRole.CLIENT, balance: 12500.75 },
+  { id: 2, name: 'Admin USALLI', email: 'admin@usalli.com', role: UserRole.ADMIN, balance: 0, password: 'AdminPass123!' },
+  { id: 3, name: 'Maria Garcia', email: 'maria@usalli.com', role: UserRole.CLIENT, balance: 7800.20 },
+];
+
+let transfers = [
+  {
+    id: 'trf_1',
+    userId: 1,
+    amount: 500,
+    accountHolderName: 'PG&E',
+    accountNumber: '987654321',
+    routingNumber: '121000358',
+    reason: 'Utility Bill #U2023-10-456',
+    status: 'completed',
+    blockedStep: 0,
+    createdAt: new Date('2023-10-15T10:00:00Z'),
+  },
+  {
+    id: 'trf_2',
+    userId: 1,
+    amount: 12000,
+    accountHolderName: 'SF Real Estate Co.',
+    accountNumber: '123456789',
+    routingNumber: '121000248',
+    reason: 'Down payment for condo',
+    status: 'blocked',
+    blockedStep: 1,
+    createdAt: new Date('2023-10-20T14:30:00Z'),
+  },
+   {
+    id: 'trf_3',
+    userId: 3,
+    amount: 250,
+    accountHolderName: 'Amazon Services LLC',
+    accountNumber: '5551234567',
+    routingNumber: '021000021',
+    reason: 'Online purchase',
+    status: 'completed',
+    blockedStep: 0,
+    createdAt: new Date('2023-10-22T09:00:00Z'),
+  },
+];
+
+let creditRequests = [
+  {
+    id: 'cr_1',
+    userId: 1,
+    amount: 5000,
+    reason: 'Home renovation',
+    status: 'approved',
+    createdAt: new Date('2023-09-10T11:00:00Z'),
+  },
+  {
+    id: 'cr_2',
+    userId: 3,
+    amount: 10000,
+    reason: 'New car down payment',
+    status: 'pending',
+    createdAt: new Date('2023-10-18T16:00:00Z'),
+  },
+];
+
+let unlockCodes = [];
+
+let blockStepMessages = [
+    'For your security, this transfer has been temporarily paused. Please provide the first verification code to proceed.',
+    'Thank you. As an additional security measure, a second verification is required. Please provide the next code.',
+    'Almost there. We need one final verification to complete your transfer. Please provide the final code.',
+    'Final security step pending. The transaction will be processed after this verification.',
+];
+
+let chatSessions = {
+    1: [{ sender: 'model', text: 'Welcome! How can I assist you today?' }],
+    3: [{ sender: 'model', text: 'Welcome! How can I assist you today?' }],
+};
+
+
+// --- DATABASE ACCESS FUNCTIONS ---
+
+// Auth
+export const validateUser = (email, password) => {
+    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (user && (user.role === UserRole.CLIENT || user.password === password)) {
+        return user;
+    }
+    return null;
+}
+
+// Users
+export const getUsers = () => users.map(({password, ...user}) => user); // Exclude passwords
+export const getUserById = (id) => users.find(u => u.id === id);
+export const createUser = (name, email, password) => {
+    const newUser = {
+        id: Math.max(...users.map(u => u.id)) + 1,
+        name,
+        email,
+        password,
+        role: UserRole.CLIENT,
+        balance: 0,
+    };
+    users.push(newUser);
+    chatSessions[newUser.id] = [{ sender: 'model', text: 'Welcome! How can I assist you today?' }];
+    const { password: _, ...userWithoutPassword } = newUser;
+    return userWithoutPassword;
+};
+
+// Transfers
+export const getTransfers = () => transfers.sort((a, b) => b.createdAt - a.createdAt);
+export const getTransfersByUserId = (userId) => transfers.filter(t => t.userId === userId).sort((a, b) => b.createdAt - a.createdAt);
+export const createTransfer = (transferData) => {
+    const user = getUserById(transferData.userId);
+    if (!user) throw new Error('User not found');
+
+    let newTransfer = {
+        ...transferData,
+        id: `trf_${Date.now()}`,
+        createdAt: new Date(),
+        status: 'processing',
+        blockedStep: 0,
+    };
+
+    if (transferData.amount > 10000) {
+        newTransfer.status = 'blocked';
+        newTransfer.blockedStep = 1;
+    } else {
+        newTransfer.status = 'completed';
+        user.balance -= transferData.amount;
+    }
+    transfers.push(newTransfer);
+    const { password, ...userWithoutPassword } = user;
+    return { newTransfer, updatedUser: userWithoutPassword };
+};
+export const updateTransfer = (id, updates) => {
+    const index = transfers.findIndex(t => t.id === id);
+    if (index !== -1) {
+        transfers[index] = { ...transfers[index], ...updates };
+        return transfers[index];
+    }
+    return null;
+}
+
+// Unlock Codes
+export const generateUnlockCode = (transferId, stepNumber) => {
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const newCode = {
+      id: `code_${Date.now()}`,
+      transferId,
+      stepNumber,
+      code,
+      used: false,
+      expiresAt: new Date(new Date().getTime() + 10 * 60 * 1000), // 10 minutes expiry
+    };
+    unlockCodes.push(newCode);
+    return code;
+};
+
+export const verifyUnlockCode = (transferId, step, code) => {
+    const codeEntry = unlockCodes.find(c => c.transferId === transferId && c.stepNumber === step && c.code === code && !c.used);
+    if (!codeEntry) return { success: false };
+
+    codeEntry.used = true;
+    const transfer = transfers.find(t => t.id === transferId);
+    const user = getUserById(transfer.userId);
+
+    if (transfer) {
+        if (step < 4) {
+            transfer.blockedStep = step + 1;
+        } else {
+            transfer.status = 'completed';
+            transfer.blockedStep = 0;
+            user.balance -= transfer.amount;
+        }
+    }
+    const { password, ...userWithoutPassword } = user;
+    return { success: true, updatedUser: userWithoutPassword };
+};
+
+// Credit Requests
+export const getCreditRequests = () => creditRequests.sort((a, b) => b.createdAt - a.createdAt);
+export const getCreditRequestsByUserId = (userId) => creditRequests.filter(cr => cr.userId === userId).sort((a, b) => b.createdAt - a.createdAt);
+export const createCreditRequest = (requestData) => {
+    const newRequest = {
+        ...requestData,
+        id: `cr_${Date.now()}`,
+        createdAt: new Date(),
+        status: 'pending',
+    };
+    creditRequests.push(newRequest);
+    return newRequest;
+};
+export const updateCreditRequest = (id, updates) => {
+    const index = creditRequests.findIndex(cr => cr.id === id);
+    if (index !== -1) {
+        const originalRequest = creditRequests[index];
+        creditRequests[index] = { ...originalRequest, ...updates };
+
+        // If approved, update user balance
+        if (updates.status === 'approved' && originalRequest.status !== 'approved') {
+            const user = getUserById(originalRequest.userId);
+            if (user) {
+                user.balance += originalRequest.amount;
+                const { password, ...userWithoutPassword } = user;
+                return { updatedRequest: creditRequests[index], updatedUser: userWithoutPassword };
+            }
+        }
+        return { updatedRequest: creditRequests[index] };
+    }
+    return null;
+};
+
+// Chat
+export const getAllChatSessions = () => chatSessions;
+export const getChatSessionByUserId = (userId) => chatSessions[userId] || [];
+export const addChatMessage = (userId, message) => {
+    if (!chatSessions[userId]) {
+        chatSessions[userId] = [];
+    }
+    chatSessions[userId].push(message);
+};
+
+// Settings
+export const getBlockStepMessages = () => blockStepMessages;
+export const updateBlockStepMessages = (messages) => {
+    blockStepMessages = messages;
+};
