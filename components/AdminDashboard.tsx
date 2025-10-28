@@ -32,6 +32,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   chatSessions,
   onSendMessage
 }) => {
+  console.log("✅ AdminDashboard loaded");
+  console.log("📦 Props:", { users, transfers, creditRequests, chatSessions });
+
   const { t, language } = useLocalization();
   const [activeTab, setActiveTab] = useState('transfers');
   const [selectedTransfer, setSelectedTransfer] = useState<Transfer | null>(null);
@@ -41,78 +44,98 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [activeChatUser, setActiveChatUser] = useState<User | null>(null);
   const [isChatLoading, setChatLoading] = useState(false);
 
-  const formatCurrency = (amount: number) => new Intl.NumberFormat(language, { style: 'currency', currency: 'USD' }).format(amount);
-  
+  const formatCurrency = (amount: number) => {
+    if (isNaN(amount)) return '—';
+    return new Intl.NumberFormat(language, { style: 'currency', currency: 'USD' }).format(amount);
+  };
+
   const formatDate = (dateStr: Date | string | null | undefined) => {
-  console.log("Formatting date:", dateStr);
-  if (!dateStr) return '—';
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) {
-    console.warn("⛔ Invalid date:", dateStr);
-    return '—';
-  }
-  return new Intl.DateTimeFormat(language, {
-    dateStyle: 'medium',
-    timeStyle: 'short'
-  }).format(date);
-};
+    console.log("🕓 Formatting date:", dateStr);
+    if (!dateStr) return '—';
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) {
+      console.warn("⛔ Invalid date:", dateStr);
+      return '—';
+    }
+    return new Intl.DateTimeFormat(language, {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    }).format(date);
+  };
 
   const getUserName = (userId: number) => users.find(u => u.id === userId)?.name || 'Unknown User';
   
   const handleOpenTransferModal = (transfer: Transfer) => {
+    console.log("📂 Opening transfer modal for:", transfer);
     setSelectedTransfer(transfer);
     setCustomReason(transfer.blockReason || '');
     setGeneratedCode('');
   };
 
   const handleCloseTransferModal = () => {
+    console.log("❌ Closing transfer modal");
     setSelectedTransfer(null);
   };
   
   const handleSaveReason = () => {
-      if(selectedTransfer) {
-          onUpdateTransfer({...selectedTransfer, blockReason: customReason });
-          handleCloseTransferModal();
-      }
+    if(selectedTransfer) {
+      console.log("💾 Saving block reason:", customReason);
+      onUpdateTransfer({...selectedTransfer, blockReason: customReason });
+      handleCloseTransferModal();
+    }
   };
   
   const handleGenerateCodeClick = async () => {
-      if(selectedTransfer) {
-          const code = await onGenerateCode(selectedTransfer.id, selectedTransfer.blockedStep);
-          setGeneratedCode(code);
-      }
+    if(selectedTransfer) {
+      console.log("🔐 Generating code for:", selectedTransfer.id);
+      const code = await onGenerateCode(selectedTransfer.id, selectedTransfer.blockedStep);
+      console.log("✅ Code generated:", code);
+      setGeneratedCode(code);
+    }
   };
 
   const handleSaveSettings = () => {
-      onUpdateBlockStepMessages(currentBlockMessages);
-      alert('Settings saved!');
+    console.log("⚙️ Saving settings:", currentBlockMessages);
+    onUpdateBlockStepMessages(currentBlockMessages);
+    alert('Settings saved!');
   };
   
   const handleAdminSendMessage = (text: string) => {
-      if(activeChatUser) {
-          onSendMessage(activeChatUser.id, { sender: ChatMessageSender.ADMIN, text });
-      }
+    if(activeChatUser) {
+      console.log("💬 Sending message to user:", activeChatUser.id, text);
+      onSendMessage(activeChatUser.id, { sender: ChatMessageSender.ADMIN, text });
+    }
   };
 
-  const renderTable = (data: any[], columns: any[]) => (
-    <div className="overflow-x-auto">
-      <table className="table w-full">
-        <thead>
-          <tr>
-            {columns.map(col => <th key={col.key}>{col.header}</th>)}
-          </tr>
-        </thead>
-        <tbody>
-          {data.map(item => (
-            <tr key={item.id} className="hover">
-              {columns.map(col => <td key={`${item.id}-${col.key}`}>{col.render(item)}</td>)}
+  const renderTable = (data: any[], columns: any[]) => {
+    console.log("📊 Rendering table with", data.length, "items");
+    return (
+      <div className="overflow-x-auto">
+        <table className="table w-full">
+          <thead>
+            <tr>
+              {columns.map(col => <th key={col.key}>{col.header}</th>)}
             </tr>
-          ))}
-        </tbody>
-      </table>
-       {data.length === 0 && <p className="text-center p-4">{t('no_transfers_found')}</p>}
-    </div>
-  );
+          </thead>
+          <tbody>
+            {data.map(item => (
+              <tr key={item.id} className="hover">
+                {columns.map(col => (
+                  <td key={`${item.id}-${col.key}`}>{col.render(item)}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+         {data.length === 0 && <p className="text-center p-4">{t('no_transfers_found')}</p>}
+      </div>
+    );
+  };
+
+  console.log("✅ Ready to render AdminDashboard");
+  console.log("Transfers data:", transfers);
+  console.log("Credit requests data:", creditRequests);
+  console.log("Users data:", users);
 
   return (
     <div className="space-y-8">
