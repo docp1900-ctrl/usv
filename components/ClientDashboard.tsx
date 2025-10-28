@@ -53,29 +53,49 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
     new Intl.NumberFormat(language, { style: 'currency', currency: 'USD' }).format(amount);
 
   const formatDate = (dateStr: Date | string | null | undefined) => {
-  try {
-    console.log("🕒 Formatting date:", dateStr);
+  console.log("🕓 [ClientDashboard] Formatting date:", dateStr);
 
-    // si la valeur est nulle, vide ou non définie
-    if (!dateStr || dateStr === "Invalid Date") return "—";
+  // 1️⃣ Si la valeur est totalement absente
+  if (!dateStr) {
+    console.warn("⚠️ Missing date value");
+    return "—";
+  }
 
-    const date = new Date(dateStr);
+  // 2️⃣ Si c’est une chaîne vide, "undefined", ou "Invalid Date"
+  if (
+    typeof dateStr === "string" &&
+    (dateStr.trim() === "" || dateStr === "undefined" || dateStr === "Invalid Date")
+  ) {
+    console.warn("⛔ Invalid date string:", dateStr);
+    return "—";
+  }
 
-    // si la date est invalide (ex: NaN, string vide, etc)
-    if (isNaN(date.getTime())) {
-      console.warn("⛔ Invalid date detected:", dateStr);
+  // 3️⃣ Si c’est déjà un objet Date
+  if (dateStr instanceof Date) {
+    if (isNaN(dateStr.getTime())) {
+      console.warn("⛔ Invalid Date object:", dateStr);
       return "—";
     }
-
     return new Intl.DateTimeFormat(language, {
       dateStyle: "medium",
       timeStyle: "short",
-    }).format(date);
-  } catch (error) {
-    console.error("💥 Error while formatting date:", dateStr, error);
+    }).format(dateStr);
+  }
+
+  // 4️⃣ Tentative de conversion
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) {
+    console.warn("⛔ Conversion failed for date:", dateStr);
     return "—";
   }
+
+  // 5️⃣ Formatage réussi
+  return new Intl.DateTimeFormat(language, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
 };
+
 
 
   const handleHelpNeeded = (initialMessage: string) => {
