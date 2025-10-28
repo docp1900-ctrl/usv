@@ -35,6 +35,7 @@ const ClientDashboard: React.FC<ClientDashboardProps> = ({
   onSendMessage,
 }) => {
   const { t, language } = useLocalization();
+  console.log("✅ ClientDashboard mounted");
   const [isTransferModalOpen, setTransferModalOpen] = useState(false);
   const [isCreditModalOpen, setCreditModalOpen] = useState(false);
   const [isChatOpen, setChatOpen] = useState(false);
