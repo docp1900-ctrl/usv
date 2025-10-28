@@ -36,6 +36,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   console.log("📦 Props:", { users, transfers, creditRequests, chatSessions });
 
   const { t, language } = useLocalization();
+  console.log("✅ AdminDashboard mounted");
   const [activeTab, setActiveTab] = useState('transfers');
   const [selectedTransfer, setSelectedTransfer] = useState<Transfer | null>(null);
   const [customReason, setCustomReason] = useState('');
