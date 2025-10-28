@@ -1,3 +1,15 @@
+// 🧠 GLOBAL DATE DEBUG
+const _OldDate = Date;
+(window as any).Date = function (...args: any[]) {
+  const d = new (Function.prototype.bind.apply(_OldDate, [null, ...args]))();
+  if (args.length === 0 || args[0] === '' || args[0] === null || args[0] === undefined) {
+    console.warn("🚨 new Date() called with invalid arg:", args[0]);
+    console.trace();
+  }
+  return d;
+};
+(window as any).Date.prototype = _OldDate.prototype;
+
 import { useState, useEffect, useCallback } from 'react';
 import {
   User,
@@ -13,18 +25,6 @@ import ClientDashboard from './components/ClientDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import { useLocalization } from './hooks/useLocalization';
 import { config } from './config';
-// 🧠 DEBUG GLOBAL POUR LES DATES
-const _OldDate = Date;
-(window as any).Date = function (...args: any[]) {
-  const d = new (Function.prototype.bind.apply(_OldDate, [null, ...args]))();
-  if (args.length === 1 && (args[0] === '' || args[0] === null || args[0] === undefined)) {
-    console.warn("🚨 new Date() called with invalid arg:", args[0]);
-    console.trace(); // ✅ montre d’où l’appel vient
-  }
-  return d;
-};
-(window as any).Date.prototype = _OldDate.prototype;
-
 
 type Page = 'login' | 'createAccount' | 'dashboard';
 
