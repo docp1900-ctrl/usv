@@ -42,7 +42,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [isChatLoading, setChatLoading] = useState(false);
 
   const formatCurrency = (amount: number) => new Intl.NumberFormat(language, { style: 'currency', currency: 'USD' }).format(amount);
-  const formatDate = (dateStr: Date | string) => new Intl.DateTimeFormat(language, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(dateStr));
+  const formatDate = (dateStr: Date | string) => {
+  if (!dateStr) return '—';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '—';
+  return new Intl.DateTimeFormat(language, {
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  }).format(date);
+};
+
   const getUserName = (userId: number) => users.find(u => u.id === userId)?.name || 'Unknown User';
   
   const handleOpenTransferModal = (transfer: Transfer) => {
